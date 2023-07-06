@@ -10,27 +10,41 @@ Things interceptor should do:-
 ==========================
 https://www.scaler.com/topics/angular/angular-interceptor/ 
 >> ng generate interceptor ExampleInterceptor
-    import { Injectable } from '@angular/core';
-    import { HttpInterceptor, HttpEvent, HttpRequest, HttpHandler } from '@angular/common/http';
-    import { Observable } from 'rxjs';
+        import { Injectable } from '@angular/core';
+        import { HttpInterceptor, HttpEvent, HttpRequest, HttpHandler } from '@angular/common/http';
+        import { Observable } from 'rxjs';
+        
+        @Injectable()
+        export class ExampleInterceptor implements HttpInterceptor {
+          intercept(httpRequest: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+              //any alteration in httpRequest can be done here
+            return next.handle(httpRequest);
+          }
+        }
     
-    @Injectable()
-    export class ExampleInterceptor implements HttpInterceptor {
-      intercept(httpRequest: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-          //any alteration in httpRequest can be done here
-        return next.handle(httpRequest);
-      }
-    }
+        + 
+    
+    @NgModule({
+       providers: [
+         { 
+           provide: HTTP_INTERCEPTORS, useClass: ExampleInterceptor, multi:true
+         },
+    ],})
 
-    + 
-
-@NgModule({
-   providers: [
-     { 
-       provide: HTTP_INTERCEPTORS, useClass: ExampleInterceptor, multi:true
-     },
-],})
-
-
+>> Simple operations on the interceptor.
+        @Injectable()
+        export class HeaderInterceptor implements HttpInterceptor {
+          constructor(private authService: AuthService) {}
+          intercept(httpRequest: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+                const reqCopy = req.clone()
+                 //can set new header
+                 reqCopy.headers.set({"ExampleHeader": "Test Data"})
+                 //can modify header
+                 reqCopy.headers.append({"Content-Type": "multipart/form-data"})
+                //can delete header
+                  reqCopy.headers.delete("Content-Type")
+                 return next.handle(reqCopy);
+          }
+        }
+        
 >> 
-
