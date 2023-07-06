@@ -1,0 +1,10 @@
+Things interceptor should do:-
+
+>> catch all API errors.
+    >> if u want a component to skip going passing API-errors through the interceptor then there is a way to do it. u have to google it.
+    >> 
+>> Profiling
+>> cacheing
+>> XSRF tokens 
+
+
