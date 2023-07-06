@@ -1,0 +1,98 @@
+Steps to put a "dedicated" web worker to work. ("Shared" web workers required port enabling on client side, which may not be ideal for prod).
+
+1. cd src/app/features/test 
+   >> npx ng generate web-worker test
+      test.worker.ts + tsconfig.worker* will be created. 
+2. test.worker.ts 
+        /// <reference lib="webworker" />
+        
+        // addEventListener('message', ({ data }) => {
+        //   const response = `worker response to ${data}`;
+        //   postMessage(response);
+        // });
+        
+        /*
+          KPMG 
+          >> console.log will not work.
+          >> This just shows how to fire an API 10 times via multiple ww instances.
+          >> TS does not have support for Promise.allSettled() yet as of 2023. Hence hack has been used to by pass compile errors
+        */ 
+        
+        // addEventListener('message', ({data}) => { // Old code. const x = data.url;
+          addEventListener('message', (ev) => {
+          const x = ev.data.url;
+          const batchcount = 10;
+          createBatches(batchcount,x);
+        });
+        
+        /*
+          Sol1: use Promises.
+            Cons: >> Promises default memory allocation on a browser is less, so it may face issues.
+                  >> Upto 5 ww instances, worked on IE, when raised to 10, it was working intermittently.
+                  >> Promise.all wont work as we want all of them to resolve/reject. So use Promise.allSettled instead.
+                     Both require (dynamically created) array of Promises. 
+                  >> o is an obj and o[0], o[1], o[2] n so on are Promises and we keep pushing them into array a[].
+        
+          Sol2: just loop and fire the API. no need to use Promises.
+                This theory needs to be tested.        
+        
+        */
+        function createBatches(b:number, u:string){
+          let o:any={}, a=[];
+          for(let _i=1; _i<b; _i++){
+            let f="k" + _i;
+            o[f] = new Promise((rs,rj)=>{callApi(u,f);});
+            a.push(o[f]);
+          }
+          (Promise as any).allSettled(a).then(()=>{}).catch((e:any)=>{});
+        }
+        
+        function callApi(u:string, f:string){
+          let url = u;
+          fetch(url).then((r)=>r.json()).then((data)=>{
+            postMessage({data:data[0],funcKey:f, url:u}); // for logging + sending to component
+          }).catch((err)=>{
+            postMessage({err: err, funcKey: f, url:u}); // for logging
+          });
+        }
+        
+3. test.component.ts 
+wwTestObj:any ={}; // on drawer open we will populate this obj.
++
+if(this.drawerFlag)this.testFireWebWorker();  //webworker test call; // this can be oninit or some place else.
++
+  ///////////////////////// web worker begins ///////////////////
+  
+  testFireWebWorker(){
+    this.wwTestObj.crap=[];
+    if(typeof Worker !== 'undefined'){
+      // let worker = new Worker(new URL('./test.worker'), import.meta.url); // errors in angular 15. why? ts or angular.json or compiler options related?
+      let worker = new Worker(new URL('./test.worker'));
+      worker = this.handleWorkerPost(worker);   
+
+      // worker.onmessage = (ev) => {};
+      worker.onmessage = ({ data }) => {
+        this.wwTestObj.crap.push(data);
+        console.info(data);
+      };
+    } else {
+      // failsafe: browser does not support web workers.
+      // this.wworkerNotSupported = true;
+      let msg = 'WW not supported. Fetching records could take more time';
+      // this.fireBulkyAPI(); // with 10K or 50K records.
+    }
+  }
+
+  handleWorkerPost(worker: Worker):Worker{
+    let dbRecordCountMocked = 1000; // pending: realtime fire another api to get this count.
+    let pageSize = 5; // these should come from serverside pagination i think ??
+    worker.postMessage({
+      'triggerBatchAPIs': true, // can be used in wworker.
+      dbRecordCountMocked, // is it to create batches? i think yes. pending implementation.
+      JSON, // passed for fun. JSON object is not accessible in web worker; but will this eat up memory assigned for wworkers? 
+      'url': 'http://jsonplaceholder.typicode.com/posts'
+    });
+    return worker;
+  }
+
+  ///////////////////////// web worker ends ///////////////////
