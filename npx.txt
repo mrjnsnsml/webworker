@@ -1,0 +1,34 @@
+npx tool installation steps + how to create project using npx
+
+      npm install npx -g
+      npm install -g npm@9.7.2
+      npx -p @angular/cli@16.0.0 ng new ng16proj --style=scss
+      cd ng16proj 
+      npm i @angular/material --save
+      ng add @progress/kendo-angular-inputs 
+      npx ng s 
+      mkdir services/
+      mkdir pipes/
+      mkdir features/
+      npx ng g module shared 
+      	- creates shared/
+      	- creates shared/shared.module.ts 
+      npm install lodash-es --save
+      npm install @types/lodash-es --save-dev
+      	imp:- use it like this !!!!
+      	import debounce from 'lodash-es/debounce'		
+      
+      cd src\app\features 
+      npx ng g module test
+      cd features/test/ 
+      npx ng g c test 
+      (we will use this test comp. to test our maticons,kendodrawer,kendogrid, etc.)
+      cd shared/
+      npx ng g c common-kdrawer
+      	npm i @progress/kendo-angular-layout --save 
+      		(Kendo UI for Angular Layout Package (AppBar, Avatar, Card, Drawer, Menu, PanelBar, Splitter, Stepper, and TabStrip Components))
+      		https://www.npmjs.com/package/@progress/kendo-angular-layout	
+      	npm i @progress/kendo-angular-grid --save
+      		https://www.npmjs.com/package/@progress/kendo-angular-grid
+      	npm i @progress/kendo-svg-icons --save
+      		import {  SVGIcon,  bellIcon,  calendarIcon, envelopLinkIcon, inboxIcon, menuIcon, starOutlineIcon } from "@progress/kendo-svg-icons";		
